@@ -1,0 +1,126 @@
+---
+title: "Advanced Bioinformatics 2026 assessment"
+author: "m2506787"
+date: "2026-04-10"
+output: html_document
+---
+
+## R Markdown
+
+## Task 3.1
+```{r}
+sum(5:55) #sum command adds all the numbers together, : is used to give the sequence of intergers between the two given numbers
+```
+## Task 3.2
+```{r}
+sumfun <- function(n) { #creating the sumfun function and introducing the variable n
+  sum(5:n) #using sum to add all intergerss between 5 and n
+}
+sumfun(10) #running the function with different numbers for n
+sumfun(20)
+sumfun(100)
+```
+## Task 3.3
+```{r}
+fib <- c(1, 1) #creating the fib array and including the starting two numbers
+for (i in 3:12) { #using a for loop to make the process repeat till it reaches the 12th number
+  fib <- append(fib, sum(tail(fib, 2))) #using the tail command to take the last two terms from the fib array and adding them together using the sum command, before using append to add the new value to the end of the fib array
+}
+print(fib)
+```
+## Task 3.4
+```{r}
+library(ggplot2) #enabling ggplot2
+ggplot(data = mtcars, aes(group=gear, x=factor(gear), y=mpg, fill = factor(gear))) + #data = mtcars instructs which dataset to use, aes instructs what the plot should look like. Gear is plotted as a factor because it can only be whole integers (there is no 4.6th gear), and fill is used to to colour each plot a different colour
+  geom_boxplot() + #this instructs the chart to be plotted as a boxplot
+  labs(x="No. of Gears", fill="No. of Gears") # this adds the label 'No. of Gears' to the x axis and to legend for the colours
+```
+## Task 3.5
+```{r}
+?cars #accesses the help file to find the units
+summary(lm(formula = dist ~ speed, data = cars)) #the lm function is used to plot a linear relationship between dist and speed from the cars dataset
+```
+The fitted slope of the line is 3.9324 with a standard error of 0.4155 and the intercept is -17.5791 with an error of 6.7584. The units are mph for speed and feet for dist, which can be found in the help file.
+
+## Task 3.6
+```{r}
+library(ggplot2) #enabling ggplot
+ggplot(data = cars, aes(x=speed, y=dist)) + #the data from the cars dataset is to be plotted with speed on the x axis and braking distance on the y axis
+  geom_point() + #plots the individual data as points on the chart
+  geom_smooth(method = lm) + #plots a line of the data using a linear regression model
+  labs(x="Speed (mph)", y=("Braking Distance (ft)")) #Adds labels to the axis
+  
+```
+## Task 3.7
+As after braking starts, the braking distance is proportional to speed², and before braking starts the distance covered will be the speed x reaction time, the total braking distance can be calculated as distance = (speed x reaction time) + (speed² x c), where c is constant. As we would expect 
+```{r}
+library(ggplot2)
+summary(lm(formula = dist ~ 0 + speed + c(speed^2), data = cars))
+
+ggplot(data = cars, aes(x=speed, y=dist)) +
+  geom_point() +
+  geom_smooth(method = lm, formula = y ~ 0 + x + c(x^2))
+```
+
+## Task 3.8
+```{r}
+count <- read.csv("~/Masters SGUKCL/Adv Bioinformatics/LMS_RNAseq_short-master-2023-final/course/exercises/data/exercise1_counts.csv", header = T, row.names = 1) #read.csv is used as the count data is stored as a .csv file. header = T is used to tell the software that the first row is the column headers and row.names = 1 is used to tell the software that the first column is the names of each row
+desc <- read.table("~/Masters SGUKCL/Adv Bioinformatics/LMS_RNAseq_short-master-2023-final/course/exercises/data/exercise1_sample_description.info", sep = "\t", header = TRUE) #read.table is used to save the the sample descriptions as a generic table. header = TRUE is used to mark the first row as the columns headers
+```
+##Task 3.9
+```{r}
+col_data <- data.frame(sample = desc$sample, condition = desc$condition, batch = desc$batch) #creating a data frame based on the columns in the sample description file for use by deseq
+col_data$sample <- as.factor(col_data$sample)
+col_data$condition <- as.factor(col_data$condition)
+col_data$batch <- as.factor(col_data$batch) #these three lines are used to store the data as factors
+all(colnames(count) == col_data$name) #This checks the dimensions of the two files to make sure they have the same columns
+```
+##Task 3.10
+```{r}
+library(DESeq2) #enabling DESeq
+dds <- DESeqDataSetFromMatrix(countData = count, colData = col_data, design =~ condition) #this constructs the deseq database using the .csv file we imported earlier and the data frame we created based on the sample description file
+```
+##Task 3.11
+```{r}
+rld <- rlog(dds) #carrying out the regularised log transformation on the deseq database
+rld_counts <- assay(rld) #changing to a matrix format as needed for later steps
+
+vsd <- varianceStabilizingTransformation(dds) #carrying out the variance stabilizing transformation on the deseq database
+vsd_counts <- assay(vsd) #changing to array format
+```
+
+##Task 3.12
+```{r}
+library("pheatmap") #enabling pheatmap
+select_rld <- order(rowMeans(rld_counts), decreasing = TRUE)[1:40] #rowMeans calculates the mean of each row of the data set, which is then ordered, using 1:40, to include the 40 most highly expressed genes in decreasing order
+pheatmap(assay(rld)[select_rld, ]) #this plots a heatmap using the rlog transformed data, based on the order established in the previous step
+
+select_vsd <- order(rowMeans(vsd_counts), decreasing = TRUE)[1:40]
+pheatmap(assay(vsd)[select_vsd, ]) #repeating the previous steps with the vsd transformed data
+```
+
+##Task 3.13
+```{r}
+library("RColorBrewer") #enabling RColorBrewer to use the Blue colur from it later
+sample_dist <- dist(t(assay(rld))) #the dist function calculates the sample distances in the rlog normalised data and applies it to a new array
+sdm <- as.matrix(sample_dist) #the as.matrix function transforms the new array into a matrix to be used
+rownames(sdm) <- rld$condition #adds the row names to the matrix
+colnames(sdm) <- NULL
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(255) #creating a new value containing the colour information to be applied to the heatmap for easier viewing
+pheatmap(sdm,
+         clustering_distance_rows = sample_dist,
+         clustering_distance_cols = sample_dist,
+         col = colors) #plotting the heatmap using the sample distance matrix and array we created earlier
+```
+
+##Task 3.14
+```{r}
+plotPCA(rld, intgroup = "condition")
+```
+By plotting the principal component analysis we can see the first principal component has a significance value of 70%, as it accounts for 70% of the observed variance, and the second principal component has a significance value of 13%, as it accounts for 13% of the observed variance.
+
+##Task 3.15
+```{r}
+plotPCA(vsd, intgroup = "condition")
+```
+Based on this chart we can see the first principal component has a significance value of 69%, as it accounts for 69% of the observed variance, and the second principal component has a significance value of 14%, as it accounts for 14% of the observed variance. Both data normalisation methods produced similar charts showing significant variance due to PC1 between the control groups (FFa) and the mutant groups (KOa and KOb).
