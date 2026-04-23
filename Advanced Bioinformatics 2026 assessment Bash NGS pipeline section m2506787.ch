@@ -143,7 +143,7 @@ bgzip ~/assignment_ngs/results/NGS0001.vcf
 # Quality filtering
 
 tabix -p vcf ~/assignment_ngs/results/NGS0001.vcf.gz
-#
+# this filters the vcf file to remove ultra low quality variants, QUAL > 1, variants without suitable supporting reads for their low quality, QUAL / A0 > 10, variants only found the forward or reverse strand, SAF > 0 & SAR > 0, and variants where the reads are not supported on both sides, RPR > 1 & RPL > 1.
 vcffilter -f "QUAL > 1 & QUAL / AO > 10 & SAF > 0 & SAR > 0 & RPR > 1 & RPL > 1" ~/assignment_ngs/results/NGS0001.vcf.gz > ~/assignment_ngs/results/NGS0001filtered.vcf
 bedtools intersect -header -wa -a ~/assignment_ngs/results/NGS0001filtered.vcf -b ~/assignment_ngs/data/annotation.bed > ~/assignment_ngs/results/NGS0001_filtered_intersect.vcf
 bgzip ~/assignment_ngs/results/NGS0001_filtered_intersect.vcf
@@ -160,12 +160,14 @@ rm ~/assignment_ngs/results/NGS0001.vcf.gz
 cd ~/annovar
 # converting the vcf file into an annovar input file
 ./convert2annovar.pl -format vcf4 ~/assignment_ngs/results/NGS0001_filtered_intersect.vcf.gz > ~/assignment_ngs/results/NGS0001_filtered_intersect.avinput
-# running annovar using its hg19 database to annotate the converted vcf file
+# running annovar using its hg19 database to annotate the converted vcf file based on the hg19 database
+# the -protocol and -operation options are used to add extra information based on different databases: refGene for RefSeq and ensGene for ensembl which both includes gene and functional information, clinvar_20180603 for ClinVar which includes clinical information, exac03 for ExAC which contains population frequencies, dbnsfp31a_interpro for dbNSFP and InterPro which contains predictions of clinical significance and avsnp147 for dbSNP which contains rsIDs.  
 ./table_annovar.pl ~/assignment_ngs/results/NGS0001_filtered_intersect.avinput humandb/ -buildver hg19 -out ~/assignment_ngs/results/NGS0001_filtered_intersect -remove -protocol refGene,ensGene,clinvar_20180603,exac03,dbnsfp31a_interpro,avsnp147 -operation g,g,f,f,f,f -otherinfo -nastring . -csvout
 cd ~
 
 #Filtering for exonic variants not in dbSNP
-
+# $6 == "\"exonic\"" filters the 6th column for any exonic variants
+# $30 == "." filters the 30th column (dbSNP) for any variants not present in the database
 awk -F',' '$6 == "\"exonic\"" && $30 == "."' ~/assignment_ngs/results/NGS0001_filtered_intersect.hg19_multianno.csv > ~/assignment_ngs/results/NGS0001_annovar_exonic_notindbSNP.csv
 cd ~
 
