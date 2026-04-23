@@ -158,8 +158,9 @@ rm ~/assignment_ngs/results/NGS0001.vcf.gz
 #Annotation
 # changing to the directory containing annovar for easier access to its commands
 cd ~/annovar
-# converting the 
+# converting the vcf file into an annovar input file
 ./convert2annovar.pl -format vcf4 ~/assignment_ngs/results/NGS0001_filtered_intersect.vcf.gz > ~/assignment_ngs/results/NGS0001_filtered_intersect.avinput
+# running annovar using its hg19 database to annotate the converted vcf file
 ./table_annovar.pl ~/assignment_ngs/results/NGS0001_filtered_intersect.avinput humandb/ -buildver hg19 -out ~/assignment_ngs/results/NGS0001_filtered_intersect -remove -protocol refGene,ensGene,clinvar_20180603,exac03,dbnsfp31a_interpro,avsnp147 -operation g,g,f,f,f,f -otherinfo -nastring . -csvout
 cd ~
 
