@@ -16,7 +16,6 @@
 #conda config --add channels conda-forge
 #conda install samtools
 #conda install bwa
-#conda install freebayes
 #conda install picard
 #conda install bedtools
 #conda install trimmomatic
