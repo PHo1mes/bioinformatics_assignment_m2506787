@@ -132,13 +132,19 @@ bedtools coverage -a ~/assignment_ngs/data/annotation.bed -b ~/assignment_ngs/da
 
 ## 2.4 Variant Calling
 
-# Variant calling using Freebayes
+# Variant calling using deepvariant
 # preparing the reference genome so it can be indexed
 zcat ~/assignment_ngs/data/reference/hg19.fa.gz > ~/assignment_ngs/data/reference/hg19.fa
-# indexing the reference genome to enable efficient reading by freebayes
+# indexing the reference genome to enable efficient reading by deepvariant
 samtools faidx ~/assignment_ngs/data/reference/hg19.fa
-# using freebayes to find the variants between the sequencing data and the reference genome
-freebayes --bam ~/assignment_ngs/data/aligned_data/NGS0001_sorted_filtered.bam --fasta-reference ~/assignment_ngs/data/reference/hg19.fa --vcf ~/assignment_ngs/results/NGS0001.vcf
+# using deepvariant to find the variants between the sequencing data and the reference genome
+deepvariant \
+  --model_type=WGS \
+  --ref=~/assignment_ngs/data/reference/hg19.fa \
+  --reads=~/assignment_ngs/data/aligned_data/NGS0001_sorted_filtered.bam \
+  --output_vcf=~/assignment_ngs/results/NGS0001.vcf \
+  --output_gvcf=~/assignment_ngs/results/NGS0001..g.vcf.gz \
+  --num_shards=4
 bgzip ~/assignment_ngs/results/NGS0001.vcf
 
 # Quality filtering
