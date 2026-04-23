@@ -43,7 +43,7 @@
 
 #If you have not done any of these, please see the instructions for each step. These will not run with the pipeline however are required for it to work.
 
-# Pre-Alignment QC
+## Pre-Alignment QC
 
 # changes the files out of the fastq.qz format which cannot be read by fastqc or trimmomatic and clears the original files to create space
 zcat $1 > ~/assignment_ngs/data/untrimmed_fastq/NGS0001.R1.fastq
@@ -55,8 +55,12 @@ rm ~/assignment_ngs/data/untrimmed_fastq/*.fastq.qz
 fastqc -t 4 ~/assignment_ngs/data/untrimmed_fastq/*.fastq
 mv ~/assignment_ngs/data/untrimmed_fastq/*fastqc* ~/assignment_ngs/results/fastqc_untrimmed_reads/
 
-#Trimmomattic
-# runs trimmomattic using 4 CPU threads, removing
+#Trimmomatic
+# Trimmomatic is used to remove low quality reads and adaptor sequences from the fastq file
+# PE instructs that this is paired end sequencing data, -threads 4 instructs to use 4 CPU threads and -phred33 instructs how the quality score is encoded
+# ILLUMINACLIP is used to instruct what the adaptor sequences are.
+# TRAILING:25 removes low quality bases from the 3' end by cutting every base up till a base with a quality of 25 is reached.
+# MINLEN:50 removes reads that are shorter than 50bp after the trimming is done
 trimmomatic PE  \
 -threads 4 \
 -phred33 \
@@ -73,12 +77,13 @@ rm ~/assignment_ngs/data/trimmed_fastq/*U
 fastqc -t 4 ~/assignment_ngs/data/trimmed_fastq/*P
 mv ~/assignment_ngs/data/trimmed_fastq/*fastqc* ~/assignment_ngs/results/fastqc_trimmed_reads/
 
-#Alignment
+## Alignment
 
 #BWAMem alignment
-
-bwa mem -t 4 -v 1 -I 250,50 ~/assignment_ngs/data/reference/hg19.fa.gz ~/assignment_ngs/data/trimmed_fastq/NGS0001_trimmed_R_1P ~/assignment_ngs/data/trimmed_fastq/NGS0001_trimmed_R_2P > ~/assignment_ngs/data/aligned_data/NGS0001.sam
-rm ~/assignment_ngs/data/trimmed_fastq/*
+# Runs BWA mem to align the trimmed sequences to the reference genome
+# -t 4 instructs the cpu to use 4 threads for this
+# -v 1 sets the verbosity level, meaning how much is 
+bwa mem -t 4 -v 1 -R '@RG\tID:NGS0001\tSM:NGS0001\tLB:lib1\tPL:ILLUMINA' -I 250,50 ~/assignment_ngs/data/reference/hg19.fa.gz ~/assignment_ngs/data/trimmed_fastq/NGS0001_trimmed_R_1P.fastq ~/assignment_ngs/data/trimmed_fastq/NGS0001_trimmed_R_2P.fastq > ~/assignment_ngs/data/aligned_data/NGS0001.sam
 samtools view -h -b ~/assignment_ngs/data/aligned_data/NGS0001.sam > ~/assignment_ngs/data/aligned_data/NGS0001.bam
 rm ~/assignment_ngs/data/aligned_data/NGS0001.sam
 samtools sort ~/assignment_ngs/data/aligned_data/NGS0001.bam > ~/assignment_ngs/data/aligned_data/NGS0001_sorted.bam
